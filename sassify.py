@@ -1,38 +1,57 @@
 import re
 import os
+import argparse
 
 
 '''
 PySassify: turns your css into sass
 
-@todo: set up defaults
-@todo: handle directory arguments
+Usage: 
+
+python sassify.py [relative source directory] [relative destination directory]
 '''
 
 ALLOWED_TYPE = '.css'
 
 class Sassify(object):
     def __init__(self):
-        self.base_url = os.getcwd() + '/data/'
+        parser = argparse.ArgumentParser(description='Sassify our css.')
+        parser.add_argument('source_folder', metavar='s', type=str,
+                           help='source folder (relative to current path)')        
+        parser.add_argument('destination_folder', metavar='d', type=str,
+                           help='destination folder (relative to current path)')
+        
+        self.args = parser.parse_args()
+        self.base_url = os.getcwd()
         self.tab = '  '
     
-    
+    def set_source_directory(self):
+        self.source_dir = os.path.join(self.base_url, self.args.source_folder)
+        
+    def set_dest_directory(self):
+        self.destination_dir = os.path.join(self.base_url, self.args.destination_folder)
+        
     def generate_sass(self): 
-        css_file = 'test.css'
+        self.set_source_directory()
+        self.set_dest_directory()
+        
+        for ddir in os.listdir(self.source_dir):
+            css_path = os.path.join(self.source_dir, ddir)
+            if not os.path.isfile(css_path): continue
+            base, ext = os.path.splitext(ddir)
+            if ext.lower() == ALLOWED_TYPE:
+                
+                css_file = ddir
+                sass_path = os.path.join(self.destination_dir, '%s.sass' % base)
+                sass_file = open(sass_path, 'wb')
+                self.read_css(css_path, sass_file)
 
-        #open sass for writing
-        sass_file = open(self.base_url + 'test.sass', 'wa')
-
-        self.read_css(css_file, sass_file)
-    
-    '''
-    @todo: generate new files based on current css file names
-    '''    
+     
     def read_css(self, css_file, sass_file):
 
 
         #open css for reading
-        with open(self.base_url + css_file) as x: css_file = x.read()
+        with open(css_file) as x: css_file = x.read()
         sel_re = re.compile(r'([^{]+){([^}]*)}', re.S)
 
         for match in sel_re.finditer(css_file):
